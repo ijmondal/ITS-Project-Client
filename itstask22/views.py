@@ -11,6 +11,7 @@ import json,urllib2
 from datetime import datetime
 import tempfile
 
+# COLLECTING WELL DATA AND SENDING IN THE FORM OF DICTIONARY
 def wellData():
 	response3 = urllib2.urlopen("http://10.0.3.23:8025/agrophotos/get")
         jsonData3 = json.load(response3) 
@@ -55,7 +56,11 @@ def wellData():
 
 def viewHouseholds(request):
 
-	response = urllib2.urlopen("http://10.0.3.23:8025/agrohouseholds/get")
+# THIS IS THE MAIN VIEW FUNCTION. APIS TO THE SERVER ARE CALLED AND THE DATA OBTAINED  IN JSON FORMAT IS PARSED.
+# CONSISTS OF 2 PARTS: HOUSEHOLD INFORMATION AND WELL INFORMATION
+
+#GETTING HOUSEHOLD INFORMATION
+response = urllib2.urlopen("http://10.0.3.23:8025/agrohouseholds/get")
         jsonData = json.load(response)
         locationRecordList =[]
         householdIdList = []
@@ -69,6 +74,7 @@ def viewHouseholds(request):
                 householdIdList.append(int(record['ID']))
                 monthlyIncomeList.append(record["Monthly_Income"])
 
+#GETTING FARM INFORMATION
         response1 = urllib2.urlopen("http://10.0.3.23:8025/agrofarms/get")
         jsonData1 = json.load(response1)
         areaList = []
@@ -95,7 +101,7 @@ def viewHouseholds(request):
         response3 = urllib2.urlopen("http://10.0.3.23:8025/agrophotos/get")
         jsonData3 = json.load(response3) 
         
-	# Get data related to wells such as depth, and average yield
+# Get data related to wells such as depth, and average yield
 
 	wells = wellData()
 
@@ -115,6 +121,8 @@ def viewHouseholds(request):
 		    FamilysizeList.append((len(MemberList))/3)
                     FamilyList.append(MemberList)
 
+#GETTING LINKS FOR VIDEOS VIA APIS FROM THE SERVER
+
         response6 = urllib2.urlopen("http://10.0.3.23:8025/agrovideos/get")
 	jsonData6 = json.load(response6)
         SeasonList=[]
@@ -126,74 +134,16 @@ def viewHouseholds(request):
 		temp.append(video['Household_Id'])
 		temp.append(video['Video_Clip'])
 		videos.append(temp)
-        '''for record in jsonData5:
-            l=[]
-            l.append(record['ID'])
-            l.append(record['SeasonName'])
-            l.append('http://10.0.3.23:8025'+record['SeasonPhoto'])
-            SeasonList.append(l)
-        for record in jsonData4:
-            FarmIdList.append(record['Farm_Id'])'''
-
-        '''for i in range(0,len(list(set(FarmIdList)))):
-            farm=[]
-            farm.append(record['Farm_Id'])
-            for record in jsonData4:
-                if record['Farm_Id']==FarmIdList[i]:
-                    farm.append(record['Season_Id'])
-                    farm.append(record['CropName'])
-            if len(farm)!=1:
-                CropList.append(farm)'''
-	
-	'''
-	response_crop = urllib2.urlopen("http://10.0.3.23:8025/agrofarms/get")
-	jsonData_crop = json.load(response_crop)
-	croplist1=[]
-	for loccrop1 in jsonData_crop:
-		croplist1.append(loccrop1['Points'][0])
-
-
-        '''
-#added
-	response = urllib2.urlopen("http://10.0.3.23:8025/agrofarms/get")
-        jsonData_crop = json.load(response)
-        croplist1=[]
-        farmSeqPoints=[]
-        for cropOfFarm in jsonData_crop:
-                data=cropOfFarm['Points']
-                data = cropOfFarm['Points'].strip('SRID=4326;POLYGON ((')
-                data = data.strip('))')
-                data1=data
-                seqPnts = data.split(',')
-                temp=[]
-                farm_points=[]
-                for item in seqPnts:
-                        temp.append(item.split(' '))
-                for it in temp:
-
-                        for i in it:
-                                if i=='':
-                                        it.remove(i)
-                        print it[0],it[1],it
-                        farm_points.append([float(it[0]),float(it[1])])
-                farmSeqPoints.append(farm_points)
-
-                data1 = data1.split(',')[0]
-                data1 = data1.split(' ')
-                farm_location=[]
-                for item in data1:
-                        farm_location.append(float(item))
-                croplist1.append(farm_location)
-	
-
-
+       
+#LOADIND AND SENDING REQUIRED DATA TO THE HTML PAGE "map.html"
 
         template=loader.get_template('itstask22/map.html')                         
-        context={'locationRecordList':wells['locationRecordList1'],'yieldList':json.dumps(wells['avgYield']),'depthList':json.dumps(wells['depthList']), 'photoList':json.dumps(wells['photoList']), 'householdLocation':locationRecordList,'householdId':householdIdList,'monthly_income':monthlyIncomeList,'FarmPoints':PointsList,'PersonalData':json.dumps(FamilyList),'seasonlist':json.dumps(SeasonList),'croplist':json.dumps(CropList),'videolist':json.dumps(videos),'Familysizelist':json.dumps(FamilysizeList),'location':croplist1,'farmSeqPoints':farmSeqPoints}
+        context={'locationRecordList':wells['locationRecordList1'],'yieldList':json.dumps(wells['avgYield']),'depthList':json.dumps(wells['depthList']), 'photoList':json.dumps(wells['photoList']), 'householdLocation':locationRecordList,'householdId':householdIdList,'monthly_income':monthlyIncomeList,'FarmPoints':PointsList,'PersonalData':json.dumps(FamilyList),'seasonlist':json.dumps(SeasonList),'croplist':json.dumps(CropList),'videolist':json.dumps(videos),'Familysizelist':json.dumps(FamilysizeList)}
 #	return HttpResponse(avgYield[1])
         return HttpResponse(template.render(context,request))	
        
 def CropsDistribution(request):
+# FOR RENDERING FARM RELATED INFORMATION
 	response = urllib2.urlopen("http://10.0.3.23:8025/agrofarms/get")
 	jsonData_crop = json.load(response)
 	croplist1=[]
@@ -223,6 +173,9 @@ def CropsDistribution(request):
 		for item in data1:
 			farm_location.append(float(item))
 		croplist1.append(farm_location)
+		
+# 	THE REQUIRED INFORMATION IS SENT TO "map_crops.html", THE HTML PAGE CORRESPONDING TO RENDERING FARM POLYGONS AND PIE CHARTS
+	
 	context={'location':croplist1,'farmSeqPoints':farmSeqPoints}
 	template=loader.get_template('itstask22/map_crops.html')
  
