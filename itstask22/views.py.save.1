@@ -1,0 +1,46 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render
+from django.template import loader
+from django.http import HttpResponse
+from .models import *
+import json,urllib2
+# Create your views here.
+
+def index(request):
+	template=loader.get_template('itstask22/map.html')
+	context={}
+	return HttpResponse(template.render(context,request))
+
+def viewHouseholds(request):
+	response = urllib2.urlopen("http://10.0.3.23:8090/agrohouseholds/get")
+	jsonData = json.load(response)
+	locationRecordList =[]
+	householdIdList = []
+	monthlyIncomeList = []
+	for record in jsonData:
+		locIndex = record['Location_Id'].index('(')
+		locationStr = record['Location_Id'][locIndex+1:-1]		
+		location = locationStr.split(' ')		
+		locationRecordList.append(float(location[0]))
+		locationRecordList.append(float(location[1]))
+		householdIdList.append(int(record['ID']))
+		monthlyIncomeList.append(record["Monthly_Income"])
+	template=loader.get_template('itstask22/map.html')
+	context = {'householdLocation':locationRecordList,'householdId':householdIdList,'monthly_income':monthlyIncomeList}
+	return HttpResponse(template.render(context,request))
+	
+def viewFarms(request):
+        response = urllib2.urlopen("http://10.0.3.23:8090/agrofarms/get")
+        jsonData = json.load(response)
+	areaList = []
+	farmIdList = []
+	pointList = []
+	l=['\n']
+	for record in jsonData:
+		areaList.append(float(record['Area']))
+		farmIdList.append(record['ID'])
+		
+	return HttpResponse(areaList+l)
+	

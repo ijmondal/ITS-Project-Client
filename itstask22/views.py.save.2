@@ -1,0 +1,115 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+import base64
+from django.shortcuts import render
+from django.template import loader
+from django.http import HttpResponse
+import requests
+#from .models import *
+import json,urllib2
+#from django.utils import simplejson
+from datetime import datetime
+import tempfile
+def viewHouseholds(request):
+	well_resp =urllib2.urlopen("http://10.0.3.23:8025/agrowells/get")
+	jsonData_well = json.load(well_resp)
+#lon lat depth yield	
+	well_detail = []
+	for record in jsonData_well:
+		
+
+        response = urllib2.urlopen("http://10.0.3.23:8025/agrohouseholds/get")
+        jsonData = json.load(response)
+        locationRecordList =[]
+        householdIdList = []
+        monthlyIncomeList = []
+        for record in jsonData:
+                locIndex = record['Location_Id'].index('(')
+                locationStr = record['Location_Id'][locIndex+1:-1]
+                {u'Photo_Id': 1, u'Depth': u'3.19996', u'Location_Id': u'SRID=4326;POINT (75.73141506753868 26.83250393208569)', u'ID': 1}{u'Photo_Id': 1, u'Depth': u'4.30000', u'Location_Id': u'SRID=4326;POINT (79.45004517593324 26.26309415309658)', u'ID': 2}location = locationStr.split(' ')
+                locationRecordList.append(float(location[0]))
+                locationRecordList.append(float(location[1]))
+                householdIdList.append(int(record['ID']))
+                monthlyIncomeList.append(record["Monthly_Income"])
+        response1 = urllib2.urlopen("http://10.0.3.23:8025/agrofarms/get")
+        jsonData1 = json.load(response1)
+        areaList = []
+        farmIdList = []
+        PointsList = []
+        end = ['\n']
+        for record in jsonData1:
+                areaList.append(float(record['Area']))
+                farmIdList.append(record['ID'])
+                start_b = record['Points'].index('(')+2
+                end_b = record['Points'].index(')')
+                tempList = map(lambda x: x.split(' '),record['Points'][start_b:end_b].split(','))
+                for t in tempList:
+                        if '' in t:
+                                t.remove('')
+                for t in tempList:
+                        t[0] = float(t[0])
+                        t[1] = float(t[1])
+                PointsList.append(tempList)
+        response2 = urllib2.urlopen("http://10.0.3.23:8025/agromembers/get")
+        response3 = urllib2.urlopen("http://10.0.3.23:8025/agrophotos/get")
+        jsonData2 = json.load(response2)
+        jsonData3 = json.load(response3) 
+        
+        #localmemlist=[]
+        FamilyList=[]
+	FamilysizeList=[]
+        for i  in range(0,len(householdIdList)):
+                MemberList=[]
+                MemberList.append(householdIdList[i])
+                for record in jsonData2:
+                    for record1 in jsonData3:
+                        if record['HouseHold_Id']==householdIdList[i] and record1['ID']==record['Photo_Id']:
+                            MemberList.append(record['Name'].decode("utf8") )
+                            date1=record['DOB'].split('T')
+                            MemberList.append(date1[0].decode())
+                            MemberList.append('http://10.0.3.23:8025'+record1['Photo'])
+                    #if localmemlist!=[]:
+                            #MemberList.append(localmemlist)
+                if MemberList!=[]:
+		    FamilysizeList.append((len(MemberList))/3)
+                    FamilyList.append(MemberList)
+        #response4 = urllib2.urlopen("http://10.0.3.23:8025/agrocrops/get")
+        #response5 = urllib2.urlopen("http://10.0.3.23:8025/agroseasons/get")
+        response6 = urllib2.urlopen("http://10.0.3.23:8025/agrovideos/get")
+        #jsonData4 = json.load(response4)
+        #jsonData5 = json.load(response5)
+	jsonData6 = json.load(response6)
+        SeasonList=[]
+        CropList=[]
+        FarmIdList=[]
+        videos=[]
+	for video in jsonData6:
+		temp=[]
+		temp.append(video['Household_Id'])
+		temp.append(video['Video_Clip'])
+		videos.append(temp)
+        '''for record in jsonData5:
+            l=[]
+            l.append(record['ID'])
+            l.append(record['SeasonName'])
+            l.append('http://10.0.3.23:8025'+record['SeasonPhoto'])
+            SeasonList.append(l)
+        for record in jsonData4:
+            FarmIdList.append(record['Farm_Id'])'''
+
+        '''for i in range(0,len(list(set(FarmIdList)))):
+            farm=[]
+            farm.append(record['Farm_Id'])
+            for record in jsonData4:
+                if record['Farm_Id']==FarmIdList[i]:
+                    farm.append(record['Season_Id'])
+                    farm.append(record['CropName'])
+            if len(farm)!=1:
+                CropList.append(farm)'''
+        
+
+        
+        template=loader.get_template('itstask22/map.html')                         
+        context={'householdLocation':locationRecordList,'householdId':householdIdList,'monthly_income':monthlyIncomeList,'FarmPoints':PointsList,'PersonalData':json.dumps(FamilyList),'seasonlist':json.dumps(SeasonList),'croplist':json.dumps(CropList),'videolist':json.dumps(videos),'Familysizelist':json.dumps(FamilysizeList)}
+        #return HttpResponse(template.render(context,request))
+        return HttpResponse(jsonData_well)

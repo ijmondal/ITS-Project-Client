@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Simple markers</title>
+    <style>
+.popup{
+	position:absolute;
+	display: inline-block;
+	visibility: hidden;
+}
+.popup .popupText{	
+	display: inline-block;
+	background-color: rgba(68, 76, 81, 0.5);
+	color: #fff;
+	text-align: left;
+	padding: 10px;
+	z-index: 1;	
+}
+
+
+.popup .show{
+	visibility:visible;
+	-moz-animation : fadeIn 1s ease-in;
+	animation: fadeIn 1s ease-in;
+}
+
+
+@-moz-keyframes fadeIn{
+	0% {opacity:0;}
+	100% {opacity: 1;}
+}
+
+@keyframes fadeIn{
+	0% {opacity:0;}
+	100% {opacity: 1;}
+}
+</style>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+<center>
+	<div onclick="myFunction('popup'+this.id)" id="1" style="cursor:pointer;" ><a> CLick Me </a>
+	
+	<div class = "popup" id = "popupBlock">
+	<div class = "popupText">This is the popup text<br>
+	This is the popup text<br>
+	This is the popup text<br>
+	This is the popup text<br>
+	This is the popup text<br>
+	</div>
+	</div>
+	</div></center>
+    <script>
+
+      function initMap() {
+	var myLatLng = [];
+	console.log({{ householdLocation }});
+	for (i=0;i 
+< {{householdLocation}}.length; i=i+2)
+	{
+		myLatLng.push({'lat':{{householdLocation}}[i],'lng':{{householdLocation}}[i+1]});
+	}
+	console.log(myLatLng);
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 4,
+          center: {lat :13.5576, lng: 80.0294} //get user's location here
+        });
+	var infowindow = new google.maps.InfoWindow();
+    for (i=0; i<myLatLng.length;i++)
+     {
+        var marker = new google.maps.Marker({
+          position: myLatLng[i],
+          map: map,
+	  });
+	marker.set("id", {{householdId}}[i]);
+	makeInfoWindowEvent(map, infowindow, "Monthly Income "+ {{monthly_income}}[i], marker);
+    //markers.push(marker);
+     }
+    var triangleCoords = [
+          {lat: 13.5056, lng: 79.5830},
+          {lat: 13.7989, lng: 79.8567},
+          {lat: 13.9098, lng: 79.9566},
+          {lat: 13.6890, lng: 79.4567}
+        ];
+
+        // Construct the polygon.
+        var Triangle = new google.maps.Polygon({
+          paths: triangleCoords,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: '#FF0000',
+          fillOpacity: 0.35
+        });
+             Triangle.setMap(map);
+      }
+
+function makeInfoWindowEvent(map, infowindow, contentString, marker) {
+  google.maps.event.addListener(marker, 'click', function() {
+    infowindow.setContent(contentString);
+    infowindow.open(map, marker);
+  });
+}
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiagBm99wkI5tOWuKdCF9bV4Au2wiNyqg&callback=initMap">
+    </script>
+  </body>
+</html>

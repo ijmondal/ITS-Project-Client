@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Simple markers</title>
+    <style>
+.popup{
+	position:absolute;
+	display: inline-block;
+	visibility: hidden;
+}
+.popup .popupText{	
+	display: inline-block;
+	background-color: rgba(68, 76, 81, 0.5);
+	color: #fff;
+	text-align: left;
+	padding: 10px;
+	z-index: 1;	
+}
+
+
+.popup .show{
+	visibility:visible;
+	-moz-animation : fadeIn 1s ease-in;
+	animation: fadeIn 1s ease-in;
+}
+
+
+@-moz-keyframes fadeIn{
+	0% {opacity:0;}
+	100% {opacity: 1;}
+}
+
+@keyframes fadeIn{
+	0% {opacity:0;}
+	100% {opacity: 1;}
+}
+</style>
+    <style>
+      .overlay {
+    height: 0%;
+    width: 100%;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: rgb(0,0,0);
+    background-color: rgba(0,0,0, 0.9);
+    overflow-y: hidden;
+    transition: 0.5s;
+}
+.overlay .closebtn {
+    position: absolute;
+    top: 20px;
+    right: 45px;
+    font-size: 60px;
+}
+@media screen and (max-height: 450px) {
+  .overlay {overflow-y: auto;}
+  .overlay a {font-size: 20px}
+  .overlay .closebtn {
+    font-size: 40px;
+    top: 15px;
+    right: 35px;
+  }
+}
+
+	/* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="myNav" class="overlay">
+  <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+  <div class="overlay-content">
+    <a href="#">About</a>
+    <a href="#">Services</a>
+    <a href="#">Clients</a>
+    <a href="#">Contact</a>
+  </div>
+</div>
+<center>
+	<div onclick="myFunction('popup'+this.id)" id="1" style="cursor:pointer;" ><a> CLick Me </a>
+	
+	<div class = "popup" id = "popupBlock">
+	<div class = "popupText">This is the popup text<br>
+	This is the popup text<br>
+	This is the popup text<br>
+	This is the popup text<br>
+	This is the popup text<br>
+	</div>
+	</div>
+	</div></center>
+    <script>
+
+      function initMap() {
+	var myLatLng = [];
+	var points = {{FarmPoints}};
+	var farms = [];
+
+	console.log("households data is "+{{ householdLocation }});
+	var latLon = {{householdLocation}};
+	
+	console.log("farm data is "+points[0]+"\n"+points[1]);
+	for (i=0;i < latLon.length; i=i+2)
+	{
+		var temp = {};
+		temp.lat = latLon[i];
+		temp.lng = latLon[i+1];
+		myLatLng.push(temp);
+//		myLatLng.push({'lat':{{householdLocation}}[i],'lng':{{householdLocation}}[i+1]});
+	}
+	for(i=0; i < points.length; ++i)
+	{
+		var pos =i;
+		polygon_paths = [];
+		for(j=0; j < points[pos].length; ++j)
+		{
+			latlon = {};
+			latlon.lat = points[pos][j][0];
+			latlon.lng = points[pos][j][1];
+			polygon_paths.push(latlon);
+		}
+		var Polygon = new google.maps.Polygon({
+          	paths: polygon_paths,
+          	strokeColor: '#FF0000',
+          	strokeOpacity: 0.8,
+          	strokeWeight: 2,
+          	fillColor: '#FF0000',
+          	fillOpacity: 0.35
+        	});
+		farms.push(Polygon);
+	}
+	console.log(myLatLng);
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 4,
+          center: myLatLng[0] //get user's location here
+        });
+	var infowindow = new google.maps.InfoWindow();
+    for (i=0; i<myLatLng.length;i++)
+     {
+        var marker = new google.maps.Marker({
+          position: myLatLng[i],
+          map: map,
+	  icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAsElEQVQ4jd2U4Q2CMBCFvxE6QkdghI7iJrKBI7ACGziCjOAGsIH+8BqPo4eNVn/4kpf0Xl6/AmkAmIBbI19oCMv+E+AibgY8iJsAR54aPwVegaCAQbK3gYmt0iugd7H7Aiyrd/ZM+sTS09RqxfgqsAPO4k7KETiJo2S25wLzOs8BmFU2S2Z71UA9e/lvgUEV7KvZT1HqbYBWHtDrrYADcDQeCsC9XoLHVaj9Ne15AeIdwsIULxD30d8AAAAASUVORK5CYII="
+	  });
+	marker.set("id", {{householdId}}[i]);
+	makeInfoWindowEvent(map, infowindow, "Monthly Income "+ {{monthly_income}}[i], marker);
+
+    //markers.push(marker);
+     }
+    var triangleCoords = [
+          {lat: 13.5056, lng: 79.5830},
+          {lat: 13.7989, lng: 79.8567},
+          {lat: 13.9098, lng: 79.9566},
+          {lat: 13.6890, lng: 79.4567}
+        ];
+
+        // Construct the polygon.
+/*        var Triangle = new google.maps.Polygon({
+          paths: triangleCoords,
+          strokeColor: '#FF0000',
+          strokeOpacity: 0.8,
+          strokeWeight: 2,
+          fillColor: '#FF0000',
+          fillOpacity: 0.35
+        });*/
+	for(i=0 ; i < farms.length; ++i)
+        {    
+		farms[i].setMap(map);
+	}
+      }
+
+function makeInfoWindowEvent(map, infowindow, contentString, marker) {
+  google.maps.event.addListener(marker, 'click', function() {
+    infowindow.setContent(contentString);
+    infowindow.open(map, marker);
+  });
+}
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiagBm99wkI5tOWuKdCF9bV4Au2wiNyqg&callback=initMap">
+    </script>
+  </body>
+</html>

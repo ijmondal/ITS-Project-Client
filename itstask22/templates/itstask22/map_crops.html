@@ -1,0 +1,493 @@
+<DOCTYPE html>
+
+<html>
+
+  <head>
+
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+
+    <meta charset="utf-8">
+
+    <title>Simple Polygon</title>
+
+    <style>
+
+      /* Always set the map height explicitly to define the size of the div
+
+       * element that contains the map. */
+
+      #map {
+
+        height: 100%;
+
+      }
+
+      /* Optional: Makes the sample page fill the window. */
+
+      html, body {
+
+        height: 100%;
+
+        margin: 0;
+
+        padding: 0;
+
+      }
+
+    </style>
+
+
+
+
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script><script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyBOqdJD1ynUft9xIoBJbHGfHHFhofTJyQo"></script>
+
+  </head>
+
+  <body>
+
+    <div id="map"></div>
+
+    <script>
+
+
+
+
+
+      var farmCoords=[], farmArea=[], farmName=[];
+
+      var pieCharts =[];
+
+      var infoWindow;
+
+      google.load( 'visualization', '1', { packages:['corechart'] });
+
+
+
+function ChartMarker( options ) {
+
+    this.setValues( options );
+
+    
+
+    this.$inner = $('<div>').css({
+
+        position: 'relative',
+
+        left: '-50%', top: '-50%',
+
+        width: options.width,
+
+        height: options.height,
+
+        fontSize: '1px',
+
+        lineHeight: '1px',
+
+        backgroundColor: 'transparent',
+
+        cursor: 'default'
+
+    });
+
+
+
+    this.$div = $('<div>')
+
+        .append( this.$inner )
+
+        .css({
+
+            position: 'absolute',
+
+            display: 'none'
+
+        });
+
+};
+
+
+
+ChartMarker.prototype = new google.maps.OverlayView;
+
+
+
+ChartMarker.prototype.onAdd = function() {
+
+    $( this.getPanes().overlayMouseTarget ).append( this.$div );
+
+};
+
+
+
+ChartMarker.prototype.onRemove = function() {
+
+    this.$div.remove();
+
+};
+
+
+
+ChartMarker.prototype.draw = function() {
+
+    var marker = this;
+
+    var projection = this.getProjection();
+
+    var position = projection.fromLatLngToDivPixel( this.get('position') );
+
+
+
+    this.$div.css({
+
+        left: position.x,
+
+        top: position.y,
+
+        display: 'block'
+
+    })
+
+
+
+    this.$inner
+
+        .html( '<img src="' + this.get('image') + '"/>' )
+
+        .click( function( event ) {
+
+            var events = marker.get('events');
+
+            events && events.click( event );
+
+        });
+
+    this.$inner
+
+        .html( '<img src="' + this.get('image') + '"/>' )
+
+      .mouseover(function()
+
+      {
+
+        $(this).css({transform:'scale(2)'});
+
+      });
+
+      this.$inner
+
+        .html( '<img src="' + this.get('image') + '"/>' )
+
+      .mouseout(function()
+
+      {
+
+        $(this).css({transform:'scale(1)'});
+
+      });
+
+    
+
+    this.chart = new google.visualization.PieChart( this.$inner[0] );
+
+    this.chart.draw( this.get('chartData'), this.get('chartOptions') );
+
+};
+
+
+
+      // This example creates a simple polygon representing the Bermuda Triangle.
+
+      function initMap() {
+
+        var map = new google.maps.Map(document.getElementById('map'), {
+
+          zoom: 5,
+
+          center: {lat: 13.57, lng: 85.22},
+
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+
+        });
+
+
+
+        // Define the LatLng coordinates for the polygon's path.
+
+        
+
+	console.log({{farmSeqPoints}});
+	
+	for(var i=0; i<{{farmSeqPoints}}.length;i++)
+{
+		var triangleCoords=[];
+		var farm = {{farmSeqPoints}}[i];
+		for(var j=0;j<farm.length;j++)
+		{
+	
+		triangleCoords.push({'lat':farm[j][0],'lng':farm[j][1]});
+			
+		}	
+		farmCoords.push(triangleCoords);
+}
+	
+        /*var triangleCoords = [
+
+          {lat: 13.22, lng: 79.190},
+
+          {lat: 12.466, lng: 79.118},
+
+          {lat: 12.321, lng: 78.757},
+
+          {lat: 15.774, lng: 78.890}
+
+        ];
+
+        farmCoords.push(triangleCoords);
+
+        triangleCoords = [
+
+          {lat: 20.22, lng: 77.190},
+
+          {lat: 19.466, lng: 77.118},
+
+          {lat: 19.321, lng: 78.757},
+
+          {lat: 19.774, lng: 77.890}
+
+        ];
+
+        farmCoords.push(triangleCoords);
+
+        triangleCoords = [
+
+          {lat: 18.22, lng: 78.190},
+
+          {lat: 17.466, lng: 77.118},
+
+          {lat: 17.321, lng: 78.457},
+
+          {lat: 17.774, lng: 77.890}
+
+        ];
+
+        farmCoords.push(triangleCoords);
+	*/
+        // Construct the polygon.
+
+        farmArea=[];
+
+        farmName=[];
+
+        
+
+//        var location=[new google.maps.LatLng( 13.22, 79.190 ), new google.maps.LatLng(20.22, 77.190), new google.maps.LatLng( 18.22, 78.190)];
+var location=[];
+for(var i =0; i<{{location}}.length;i++)
+{
+	location.push(new google.maps.LatLng({{location}}[i][1], {{location}}[i][0]));
+}
+var dataList =[];
+
+
+
+var farmNameList=[];
+for(var i=0; i<location.length;i++)
+{
+	farmNameList.push("Farm"+(i+1));
+	farmName.push("Farm"+(i+1));
+	farmArea.push(Math.Random *(6-2)+2);
+}
+
+for(var i=0; i<location.length; i++)
+
+{
+
+    var data = google.visualization.arrayToDataTable([
+
+        [ 'Crops', 'Quintals' ],
+
+        [ 'Wheat in '+farmNameList[i] , 7 ],//+ (Math.random()*2-1)*sliderInput],
+
+        [ 'Cotton in '+farmNameList[i] , 2 ],
+
+        [ 'Maize in '+farmNameList[i] , 2 ],
+
+        [ 'Barley in '+farmNameList[i] , 2],
+
+        [ 'Mustard Seed in '+farmNameList[i] , 3]
+
+    ]);
+
+    dataList.push(data);
+
+ }   
+
+    var options = {
+
+        fontSize: 8,
+
+        backgroundColor: 'transparent',
+
+        legend: 'none'
+
+    };
+
+console.log(location.length);
+
+        
+
+
+
+        for(var i=0; i< location.length; i++)
+
+{
+
+    var marker = new ChartMarker({
+
+        map: map,
+
+        position: location[i],
+
+        width: '80px',
+
+        height: '80px',
+
+        chartData: dataList[i],
+
+        chartOptions: options,
+
+        events: {
+
+            click: function( event ) {
+
+                //alert( 'Clicked marker' );
+
+          }
+
+        }
+
+    });
+
+    pieCharts.push(marker);
+
+    marker.setMap(null);
+
+}
+
+
+
+var currPieChart;
+
+        for(var i=0;i<farmCoords.length;i++){
+
+        var bermudaTriangle = new google.maps.Polygon({
+
+          position:farmCoords[i][0],
+
+          paths: farmCoords[i],
+
+          strokeColor: '#FF0000',
+
+          strokeOpacity: 0.8,
+
+          strokeWeight: 2,
+
+          fillColor: '#FF0000',
+
+          fillOpacity: 0.35,
+
+          scale :Math.pow(2, farmArea[i]) / 2,
+
+        });
+
+
+
+        bermudaTriangle.setMap(map);
+
+        infoWindow = new google.maps.InfoWindow();
+
+        var content='<div>'+farmName[i]+'<br>'+'FarmArea:'+farmArea[i]+' </div>';
+
+        //google.maps.event.addListener(bermudaTriangle,'click', (function(bermudaTriangle,content,infowindow){ 
+
+        //return function() {
+
+           //infowindow.setContent(content);
+
+           //infowindow.open(map,bermudaTriangle);
+
+        //};
+
+    //})(bermudaTriangle,content,infoWindow)); 
+
+        var marker = pieCharts[i];
+
+        google.maps.event.addListener(bermudaTriangle,'click', (function(bermudaTriangle,content,infowindow,marker){ 
+
+        return function() {
+
+          marker.setMap(map); 
+
+          if(typeof(currPieChart)!=='undefined')
+
+          {
+
+            currPieChart.setMap(null);
+
+          }
+
+          
+
+            currPieChart=marker;
+
+          };
+
+    })(bermudaTriangle,content,infoWindow,marker)); 
+
+
+
+
+
+        /*google.maps.event.addListener(bermudaTriangle,'mouseout', (function(bermudaTriangle,content,infowindow,marker){ 
+
+        return function() {
+
+          marker.setMap(null); 
+
+          };
+
+    })(bermudaTriangle,content,infoWindow,marker)); */
+
+
+
+
+
+      }
+
+      }
+
+    $(initMap);
+
+    </script>
+
+    <!--
+
+    <script async defer
+
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBOqdJD1ynUft9xIoBJbHGfHHFhofTJyQo &callback=initMap">
+
+    </script>
+
+  -->
+
+  </body>
+
+</html>
+

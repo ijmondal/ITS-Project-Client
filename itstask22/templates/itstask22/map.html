@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+{% load static %}
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+
+<script src="{% static "itstask22/ThirdParty/Cesium/Cesium.js" %}"></script>
+    <style>@import url({% static "itstask22/ThirdParty/Cesium/Widgets/widgets.css" %});</style>
+    <link rel="stylesheet" href="{% static "itstask22/index.css" %}" media="screen">
+    <style>
+ .Box {
+  float: left;
+  width: 20px;
+  height: 20px;
+  margin: 5px;
+  border: 1px solid rgba(0, 0, 0, .2);
+}
+.light_blue {
+  background: rgba(65, 105, 225, .8);
+}
+
+.blue {
+  background:  rgba(0, 0, 255, .8 );
+}
+
+.dark_blue {
+  background:  rgba(0, 0, 139, .8);
+}
+
+.red {
+  background: rgba(255, 0, 0, .8);
+}
+
+.Blue {
+  background:  rgba(72, 61, 139, .8 );
+}
+
+.green {
+  background:  rgba(0, 128, 0, .8);
+}
+
+
+    </style>
+<script>
+    function display3D(){
+
+var legend = document.getElementById('k');
+legend.innerHTML = '<h2>Key</h2> \
+    <div class = "Box light_blue"> </div> Less yield (less than 50 L/day)<br><br> \
+    <div class = "Box blue"> </div> Medium yield (50 -100 L/day)<br><br> \
+    <div class = "Box dark_blue"> </div>High yield (more than 100 L/day)<br><br>';
+
+var loc = JSON.parse("{{ locationRecordList|escapejs }}");
+var depth = JSON.parse("{{ depthList|escapejs }}");
+var photo = JSON.parse("{{ photoList|escapejs }}");
+var yield = JSON.parse("{{ yieldList|escapejs }}");
+
+console.log( depth[0] );
+
+
+    Cesium.BingMapsApi.defaultKey = 'AihaXS6TtE_olKOVdtkMenAMq1L5nDlnU69mRtNisz1vZavr1HhdqGRNkB2Bcqvs'; // For use with this application only
+
+    //////////////////////////////////////////////////////////////////////////
+    // Creating the Viewer
+    //////////////////////////////////////////////////////////////////////////
+
+    var viewer = new Cesium.Viewer('map');
+
+    //////////////////////////////////////////////////////////////////////////
+    // Loading Imagery
+    //////////////////////////////////////////////////////////////////////////
+
+    // Add Bing imagery
+    viewer.imageryLayers.addImageryProvider(new Cesium.BingMapsImageryProvider({
+        url : 'https://dev.virtualearth.net',
+        mapStyle: Cesium.BingMapsStyle.AERIAL // Can also use Cesium.BingMapsStyle.ROAD
+    }));
+
+    //////////////////////////////////////////////////////////////////////////
+    // Loading Terrain
+    //////////////////////////////////////////////////////////////////////////
+
+    // Load STK World Terrain
+    viewer.terrainProvider = new Cesium.CesiumTerrainProvider({
+        url : 'https://assets.agi.com/stk-terrain/world',
+        requestWaterMask : true, // required for water effects
+        requestVertexNormals : false // required for terrain lighting
+    });
+    // Enable depth testing so things behind the terrain disappear.
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+
+    //////////////////////////////////////////////////////////////////////////
+    // Configuring the Scene
+    //////////////////////////////////////////////////////////////////////////
+
+    // Enable lighting based on sun/moon positions
+    viewer.scene.globe.enableLighting = false;
+
+    var well_locations = {
+0:[13.208962, 78.749839 , 1500.00, 10.000],
+1:[13.207267, 78.746638, 1000.000, 20.00],
+2:[13.206998, 78.748859, 2000.000, 35.000],
+3:[13.207507, 78.746898, 130.000, 90.80],
+4:[13.207319, 78.748054, 2459.000, 89.909],
+5:[13.208383, 78.747988 , 3000.000, 75.90],
+6:[13.208686, 78.749429 , 2500.00, 109.90],
+7:[13.210107, 78.746586, 200.00, 189.78],
+8:[13.208892, 78.747413 , 500.00, 789.9],
+9:[13.210623, 78.748336 , 1500.000, 563.78]
+};
+
+    // Create an initial camera view
+    var initialPosition = new Cesium.Cartesian3.fromDegrees(loc[0],loc[1], 2000.0000);//-73.998114468289017509, 40.674512895646692812, 2631.082799425431);
+    var initialOrientation = new Cesium.HeadingPitchRoll.fromDegrees(7.1077496389876024807, -31.987223091598949054, 0.025883251314954971306);
+    var homeCameraView = {
+        destination : initialPosition,
+        orientation : {
+            heading : initialOrientation.heading,
+            pitch : initialOrientation.pitch,
+            roll : initialOrientation.roll
+        }
+    };
+    // Set the initial view
+    viewer.scene.camera.setView(homeCameraView);
+
+    // Add some camera flight animation options
+    homeCameraView.duration = 2.0;
+    homeCameraView.maximumHeight = 2000;
+    homeCameraView.pitchAdjustHeight = 2000;
+    homeCameraView.endTransform = Cesium.Matrix4.IDENTITY;
+    // Override the default home button
+    viewer.homeButton.viewModel.command.beforeExecute.addEventListener(function (e) {
+        e.cancel = true;
+        viewer.scene.camera.flyTo(homeCameraView);
+    });
+
+    // Set up clock and timeline.
+    viewer.clock.shouldAnimate = true; // default
+    viewer.clock.startTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
+    viewer.clock.stopTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:20:00Z");
+    viewer.clock.currentTime = Cesium.JulianDate.fromIso8601("2017-07-11T16:00:00Z");
+    viewer.clock.multiplier = 2; // sets a speedup
+    viewer.clock.clockStep = Cesium.ClockStep.SYSTEM_CLOCK_MULTIPLIER; // tick computation mode
+    viewer.clock.clockRange = Cesium.ClockRange.LOOP_STOP; // loop at the end
+    viewer.timeline.zoomTo(viewer.clock.startTime, viewer.clock.stopTime); // set visible range
+
+    //////////////////////////////////////////////////////////////////////////
+    // Loading and Styling Entity Data
+    //////////////////////////////////////////////////////////////////////////
+
+    var kmlOptions = {
+        camera : viewer.scene.camera,
+        canvas : viewer.scene.canvas,
+        clampToGround : true
+    };
+
+
+
+var totalWells = 10;
+var wells = new Array(10);
+for(var j = 0; j < depth.length; ++j)
+{
+    var i = j;
+    var blue_value,green_value,red_value ;
+	blue_value = green_value = red_value =0;
+	var curr = 2*j;
+     var wellPosition = new Cesium.Cartesian3.fromDegrees(loc[curr],loc[curr+1], 100.00);
+    if (yield[i] <= 50){
+        blue_value = 1;
+	green_value = 0.4118;
+	red_value = 0.2549;
+
+    }
+    else if(yield[i]> 50 && yield[i] <100){
+        blue_value = 1;
+    }
+    else{
+        blue_value = 0.5451;
+    }
+        wells[i] = viewer.entities.add({
+            id : 'well'+j,
+            name : 'well'+j,
+            position: wellPosition,
+            cylinder : {
+                
+                length : depth[i],
+                topRadius : 100.0,
+                bottomRadius : 100.0,
+                material : Cesium.Color.fromRandom({
+
+                    red: red_value,
+                    green: green_value,
+                    blue: blue_value,
+                    alpha : 0.8}),
+                outline : false,
+                outlineColor : Cesium.Color.BLUE,
+                   heightReference : Cesium.HeightReference.CLAMP_TO_GROUND
+            } 
+            
+        });
+wells[i].description = '<h1> Well information </h1><br><strong>Label:</storng> well'+i+'<br> <stong>Depth:</strong>'+depth[i]+' meters <br><strong>Yield:</strong>' + yield[i] +' L/day <br> Photo:<br> <img src= '+photo[i]+' width = 50 height = 50/><br>';
+}
+    }
+    </script>
+
+
+
+    <title>Agro Help</title>
+    <style>
+
+      #map {
+	position: absolute;
+    right: 0px;
+	width:80%;
+        height: 100%;
+      }
+#map1 {
+	position: absolute;
+    left: 0px;
+	width:40%;
+        height: 100%;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+#content {
+    border:4px solid black;
+    margin-top: 8px;
+    background:#AFEEEE;
+    color:#000;
+    font-family:Arial, Helvetica, sans-serif;
+    font-size:12px;
+    padding: .5em 1em;
+    -webkit-border-radius: 2px;
+    
+    border-radius: 2px;
+    text-shadow:0 -1px #000000;
+     -webkit-box-shadow: 0 0  8px #000;
+    box-shadow: 0 0 8px #000;
+}
+.button {
+    background-color: #4CAF50;
+    border: 3px solid black;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: italic;
+    display: inline-block;
+    font-size: 16px;
+    margin: 20px 8px;
+   cursor: pointer; 
+}
+.key
+{
+    background-color: white;
+    position: absolute;
+    top: 10%;
+    left: 35%;
+    margin-top: -30px;
+    margin-left: -180px;
+}
+</style>
+  </head>
+  <body>
+<div id="map1">
+<left>
+<button  onclick="init()" class="button">Income Vs FamilySize</button></left>
+<div>
+<button  onclick="initMap()" class="button">Home</button></div>
+<div>
+<button onclick="display3D()" class="button"> 3D Wells </button></div>
+</div>
+    <div id="map"></div>
+<div class = "key" id="k">  </div>
+<div class = "key1" id="k1">  </div>
+ <script> 
+function initMap() 
+{
+var legend = document.getElementById('k');
+legend.innerHTML = '';
+
+ var myLatLng = [];
+
+       var latLon = {{householdLocation}};
+var monthly_income={{monthly_income}};
+var video = JSON.parse("{{ videolist|escapejs }}");
+var location_wells = JSON.parse("{{ locationRecordList |escapejs }}");
+var depth = JSON.parse("{{ depthList|escapejs }}");
+var photo_wells = JSON.parse("{{ photoList|escapejs }}");
+console.log(video[0][1]);
+console.log(location_wells);console.log(depth);console.log(photo_wells);
+        for (i=0;i < latLon.length; i=i+2)
+        {
+                var temp = {};
+                temp.lat = latLon[i];
+                temp.lng = latLon[i+1];
+                myLatLng.push(temp);
+        }
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 2,
+          center: myLatLng[0]
+        });
+markers = Array();
+    infoWindows = Array();
+
+    for (i=0; i<myLatLng.length;i++)
+     {
+        var marker = new google.maps.Marker({
+          position: myLatLng[i],
+          map: map,
+          icon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAsElEQVQ4jd2U4Q2CMBCFvxE6QkdghI7iJrKBI7ACGziCjOAGsIH+8BqPo4eNVn/4kpf0Xl6/AmkAmIBbI19oCMv+E+AibgY8iJsAR54aPwVegaCAQbK3gYmt0iugd7H7Aiyrd/ZM+sTS09RqxfgqsAPO4k7KETiJo2S25wLzOs8BmFU2S2Z71UA9e/lvgUEV7KvZT1HqbYBWHtDrrYADcDQeCsC9XoLHVaj9Ne15AeIdwsIULxD30d8AAAAASUVORK5CYII=",
+infoWindowIndex : i
+          });
+var member=JSON.parse("{{ PersonalData|escapejs }}");
+var text='';
+var images='';
+var hid=i;
+for(k=0;k<member.length;k++)
+{
+	if(member[k][0]==hid+1)
+	{
+
+for(j=0;j<member[k].length;j++)
+{
+	if(j%3==0)
+	images+="<img src="+member[k][j]+" width=50 height=50/>"+"<br>";
+else
+images+=member[k][j]+" ";
+}
+}
+}
+var contentString = '<div id="content">'+'<h1><i><b><u>HouseHold details:</u></b></i></h1>'+'<h2><b>'+images+'</b></h2>'+"<br>"+'<h2><b>Monthly_Income:</b></h2>'+'<h3><b>'+monthly_income[i]+'</b></h3>'+'<iframe width="420" height="345" src='+video[i][1]+'>'+'</iframe>'+'</div>';
+
+	var infowindow = new google.maps.InfoWindow({
+          content: contentString,
+	 maxWidth: 35000,
+maxHeight: 20000
+    });
+ google.maps.event.addListener(marker,'click', function(event) {
+         infoWindows[this.infoWindowIndex].open(map, this);
+        });
+ infoWindows.push(infowindow);
+
+        markers.push(marker);	
+}  
+}
+    </script>
+ <script> 
+function init() 
+{
+var legend = document.getElementById('k');
+legend.innerHTML = '';
+      
+      var legend1 = document.getElementById('k');
+legend1.innerHTML = '<h2>Key</h2> \
+    <div class = "Box red"> </div>Less Income (less than 1000)<br><br> \
+    <div class = "Box Blue"> </div> Medium Income (Greater than 1000 and less than 10000)<br><br> \
+    <div class = "Box green"> </div>High Income (more than 10000)<br><br>';
+ var myLatLng = [];
+       var latLon = {{householdLocation}};
+var monthly_income={{monthly_income}};
+var video = JSON.parse("{{ videolist|escapejs }}");
+console.log(video[0][1]);
+var family_size = JSON.parse("{{ Familysizelist|escapejs }}");
+        for (i=0;i < latLon.length; i=i+2)
+        {
+                var temp = {};
+                temp.lat = latLon[i];
+                temp.lng = latLon[i+1];
+                myLatLng.push(temp);
+        }
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 2,
+          center: myLatLng[0]
+        });
+markers = Array();
+    infoWindows = Array();
+
+    for (i=0; i<myLatLng.length;i++)
+     {
+if(monthly_income[i]<1000)
+{
+ var cityCircle = new google.maps.Circle({
+            strokeColor: '#FF0000',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: map,
+            center:myLatLng[i],
+            radius: (family_size[i]) * 100000,
+          });
+ }
+else if(monthly_income[i]>=1000 && monthly_income[i]<10000)
+{
+var cityCircle = new google.maps.Circle({
+            strokeColor: '#483D8B',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#483D8B',
+            fillOpacity: 0.35,
+            map: map,
+            center:myLatLng[i],
+            radius: (family_size[i]) * 100000,
+          });
+}
+if(monthly_income[i]>10000)
+{
+ var cityCircle = new google.maps.Circle({
+            strokeColor: '#008000',
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: '#008000',
+            fillOpacity: 0.35,
+            map: map,
+            center:myLatLng[i],
+            radius: (family_size[i]) * 100000,
+          });
+ }    
+}
+}
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCiagBm99wkI5tOWuKdCF9bV4Au2wiNyqg&callback=initMap">
+    </script>
+  </body>
+</html>
