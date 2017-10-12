@@ -415,18 +415,6 @@ var currPieChart;
 
         var content='<div>'+farmName[i]+'<br>'+'FarmArea:'+farmArea[i]+' </div>';
 
-        //google.maps.event.addListener(bermudaTriangle,'click', (function(bermudaTriangle,content,infowindow){ 
-
-        //return function() {
-
-           //infowindow.setContent(content);
-
-           //infowindow.open(map,bermudaTriangle);
-
-        //};
-
-    //})(bermudaTriangle,content,infoWindow)); 
-
         var marker = pieCharts[i];
 
         google.maps.event.addListener(bermudaTriangle,'click', (function(bermudaTriangle,content,infowindow,marker){ 
@@ -451,24 +439,6 @@ var currPieChart;
 
     })(bermudaTriangle,content,infoWindow,marker)); 
 
-
-
-
-
-        /*google.maps.event.addListener(bermudaTriangle,'mouseout', (function(bermudaTriangle,content,infowindow,marker){ 
-
-        return function() {
-
-          marker.setMap(null); 
-
-          };
-
-    })(bermudaTriangle,content,infoWindow,marker)); */
-
-
-
-
-
       }
 
       }
@@ -477,15 +447,7 @@ var currPieChart;
 
     </script>
 
-    <!--
-
-    <script async defer
-
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBOqdJD1ynUft9xIoBJbHGfHHFhofTJyQo &callback=initMap">
-
-    </script>
-
-  -->
+   
 
   </body>
 
